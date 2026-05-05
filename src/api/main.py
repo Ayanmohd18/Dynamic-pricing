@@ -126,8 +126,13 @@ async def lifespan(app: FastAPI):
     )
     
     # 4. Connect Kafka
-    state["kafka"] = AIOKafkaProducer(bootstrap_servers=state["config"]["kafka"]["bootstrap_servers"])
-    await state["kafka"].start()
+    try:
+        state["kafka"] = AIOKafkaProducer(bootstrap_servers=state["config"]["kafka"]["bootstrap_servers"])
+        await state["kafka"].start()
+        logger.info("Kafka Producer Started")
+    except Exception as e:
+        logger.warning("Failed to connect to Kafka. Price updates will not be published.", error=str(e))
+        state["kafka"] = None
     
     # 5. Initialize Optimizer & Store
     state["feature_store"] = FeatureStore(state["redis"], state["config"])
