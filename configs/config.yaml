@@ -1,0 +1,44 @@
+model:
+  path: "../models/xgboost_pricing_v1.pkl"
+  version: "1.0.0"
+  retrain_threshold_mae: 8.0
+
+redis:
+  host: "localhost"
+  port: 6379
+  db: 0
+  ttl:
+    price_cache: 30
+    competitor: 300
+    inventory: 60
+
+kafka:
+  bootstrap_servers: "localhost:9092"
+  topics:
+    click_events: "pricing.events.clicks"
+    order_stream: "pricing.events.orders"
+    inventory_updates: "pricing.updates.inventory"
+    competitor_prices: "pricing.updates.competitor"
+    price_updates: "pricing.outputs.updates"
+
+pricing_rules:
+  inventory_multiplier:
+    min: 0.90
+    max: 1.15
+  demand_multiplier:
+    min: 0.95
+    max: 1.20
+  flash_sale_multiplier: 1.30
+  competitor_blend_ratio: 0.3
+  price_floor_margin: 1.05
+  price_ceiling_msrp: 1.50
+
+api:
+  host: "0.0.0.0"
+  port: 8000
+  workers: 4
+
+aws:
+  region: "us-east-1"
+  s3_bucket: "olist-pricing-engine"
+  cloudwatch_namespace: "DynamicPricing/Production"

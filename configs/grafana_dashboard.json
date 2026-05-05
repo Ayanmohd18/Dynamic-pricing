@@ -1,0 +1,36 @@
+{
+    "title": "Olist Dynamic Pricing Control Center",
+    "panels": [
+        {
+            "title": "Total Revenue (Real-time)",
+            "type": "graph",
+            "id": 1
+        },
+        {
+            "title": "Average Margin %",
+            "type": "gauge",
+            "id": 2
+        },
+        {
+            "title": "Pricing Decisions / Min",
+            "type": "stat",
+            "id": 3
+        },
+        {
+            "title": "Flash Sales Active",
+            "type": "stat",
+            "id": 4,
+            "color": "red"
+        },
+        {
+            "title": "Model MAE (Last 1H)",
+            "type": "graph",
+            "id": 5
+        },
+        {
+            "title": "Cache Hit Rate %",
+            "type": "gauge",
+            "id": 6
+        }
+    ]
+}
