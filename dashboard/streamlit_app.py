@@ -11,12 +11,79 @@ import os
 # --- Configuration & Styling ---
 st.set_page_config(page_title="Dynamic Pricing Dashboard", layout="wide")
 
-# Custom Dark-Friendly CSS
+# Custom Sleek UI / UX CSS (Uber Aesthetic)
 st.markdown("""
     <style>
-    .main { background-color: #0e1117; color: #fafafa; }
-    .stMetric { background-color: #1e2130; padding: 15px; border-radius: 10px; border: 1px solid #3d446e; }
-    .stButton>button { width: 100%; border-radius: 5px; background-color: #4CAF50; color: white; }
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+    html, body, [class*="css"] {
+        font-family: 'Inter', -apple-system, sans-serif;
+        letter-spacing: -0.01em;
+    }
+    
+    /* Metrics / Cards */
+    [data-testid="stMetric"] {
+        background-color: var(--secondary-background-color);
+        padding: 24px;
+        border-radius: 0px;
+        border: 1px solid rgba(128, 128, 128, 0.2);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    [data-testid="stMetric"]:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    }
+    [data-testid="stMetricLabel"] {
+        font-weight: 500;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        opacity: 0.6;
+    }
+    [data-testid="stMetricValue"] {
+        font-weight: 600;
+        font-size: 2.2rem;
+    }
+
+    /* Buttons */
+    .stButton>button {
+        background-color: var(--text-color);
+        color: var(--background-color);
+        border: none;
+        border-radius: 0px;
+        font-weight: 600;
+        padding: 12px 24px;
+        transition: opacity 0.2s ease, transform 0.1s ease;
+    }
+    .stButton>button:hover, .stButton>button:focus {
+        opacity: 0.8;
+        background-color: var(--text-color);
+        color: var(--background-color);
+        border: none;
+    }
+    .stButton>button:active {
+        transform: scale(0.98);
+    }
+
+    /* Inputs */
+    .stTextInput>div>div>input, .stSelectbox>div>div>div {
+        border-radius: 0px;
+        border: 1px solid rgba(128, 128, 128, 0.2);
+    }
+
+    /* Table */
+    [data-testid="stTable"] {
+        border-radius: 0px;
+        border: 1px solid rgba(128, 128, 128, 0.2);
+    }
+    
+    /* Headers */
+    h1, h2, h3, h4 {
+        font-weight: 600 !important;
+    }
+    hr {
+        border-bottom-color: rgba(128, 128, 128, 0.2);
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -52,6 +119,10 @@ demand_score = st.sidebar.slider("Demand Score (7d)", 0, 1000, 150)
 inventory_ratio = st.sidebar.slider("Inventory Ratio", 0.0, 1.0, 0.4)
 comp_delta = st.sidebar.slider("Competitor Delta", -0.5, 0.5, 0.05)
 is_flash_sale = st.sidebar.toggle("⚡ Is Flash Sale", value=False)
+
+st.sidebar.header("🌧️ Real-Time Logistics (Surge)")
+weather_condition = st.sidebar.selectbox("Weather Condition", options=["Clear", "Rain", "Heavy Rain/Snow", "Extreme"])
+fleet_availability = st.sidebar.slider("Delivery Fleet Availability", 0.0, 1.0, 0.8)
 
 # --- Helper Functions ---
 def get_prediction(inputs):
@@ -92,7 +163,13 @@ ml_price, X_input = get_prediction(sku_id)
 inv_mult = 1.10 if inventory_ratio < 0.2 else 1.0
 dem_mult = 1.05 if demand_score > 500 else 1.0
 flash_mult = 1.25 if is_flash_sale else 1.0
-final_price = ml_price * inv_mult * dem_mult * flash_mult
+
+# Surge Pricing Logic (Uber/Lyft style)
+weather_mult_map = {"Clear": 1.0, "Rain": 1.05, "Heavy Rain/Snow": 1.15, "Extreme": 1.30}
+weather_mult = weather_mult_map[weather_condition]
+fleet_mult = 1.0 + ((1.0 - fleet_availability) * 0.4) # Up to 40% surge if 0 fleet
+
+final_price = ml_price * inv_mult * dem_mult * flash_mult * weather_mult * fleet_mult
 
 # CI and Guardrails
 cat_std = cat_stats[cat_stats['category'] == selected_cat]['std'].values[0]
@@ -129,8 +206,8 @@ shap_df = pd.DataFrame({
 
 fig_shap = px.bar(shap_df, x='Impact', y='Feature', orientation='h', 
              title="How inputs are shifting the price",
-             color='Impact', color_continuous_scale='RdBu_r')
-st.plotly_chart(fig_shap, use_container_width=True)
+             color='Impact', color_continuous_scale='gray')
+st.plotly_chart(fig_shap, use_container_width=True, theme="streamlit")
 
 # 3. PRICE HISTORY
 st.divider()
@@ -142,18 +219,22 @@ with col_left:
     fig_hist = px.line(cat_df, x='order_purchase_timestamp', y='optimal_price',
                   title=f"Historical Price: {selected_cat}",
                   line_shape='spline', render_mode='svg')
-    fig_hist.update_traces(line_color='#00ffcc')
-    st.plotly_chart(fig_hist, use_container_width=True)
+    fig_hist.update_traces(line_color='gray', line_width=2)
+    st.plotly_chart(fig_hist, use_container_width=True, theme="streamlit")
 
 with col_right:
     # 4. ADJUSTMENT BREAKDOWN
-    st.subheader("📋 Adjustment Breakdown")
+    st.subheader("📋 Surge & Adjustment Breakdown")
     breakdown_data = {
-        "Step": ["Base ML Price", "Inventory Multiplier", "Demand Multiplier", "Flash Sale Multiplier", "Final Price"],
-        "Value": [f"₹{ml_price:.2f}", f"x{inv_mult}", f"x{dem_mult}", f"x{flash_mult}", f"₹{final_price:.2f}"],
-        "Impact": ["-", f"{'+' if inv_mult > 1 else ''}{int((inv_mult-1)*100)}%", 
-                    f"{'+' if dem_mult > 1 else ''}{int((dem_mult-1)*100)}%", 
-                    f"{'+' if flash_mult > 1 else ''}{int((flash_mult-1)*100)}%", "Total Recommendation"]
+        "Step": ["Base ML Price", "Inventory Mult.", "Demand Mult.", "Flash Sale", "Weather Surge", "Fleet Surge", "Final Price"],
+        "Value": [f"₹{ml_price:.2f}", f"x{inv_mult}", f"x{dem_mult}", f"x{flash_mult}", f"x{weather_mult}", f"x{fleet_mult:.2f}", f"₹{final_price:.2f}"],
+        "Impact": ["-", 
+                   f"{'+' if inv_mult > 1 else ''}{int((inv_mult-1)*100)}%", 
+                   f"{'+' if dem_mult > 1 else ''}{int((dem_mult-1)*100)}%", 
+                   f"{'+' if flash_mult > 1 else ''}{int((flash_mult-1)*100)}%",
+                   f"{'+' if weather_mult > 1 else ''}{int((weather_mult-1)*100)}%",
+                   f"{'+' if fleet_mult > 1 else ''}{int((fleet_mult-1)*100)}%",
+                   "Total Recommendation"]
     }
     st.table(pd.DataFrame(breakdown_data))
 

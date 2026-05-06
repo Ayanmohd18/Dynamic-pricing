@@ -4,7 +4,7 @@ import numpy as np
 import os
 
 class DynamicPricingEngine:
-    def __init__(self, model_path):
+    def __init__(self, model_path, tf_model_path=None, tf_scaler_path=None):
         import xgboost as xgb
         # If it's a pickle, use joblib; if JSON, use native loader
         if model_path.endswith('.pkl'):
@@ -12,14 +12,31 @@ class DynamicPricingEngine:
         else:
             self.model = xgb.XGBRegressor()
             self.model.load_model(model_path)
+            
+        # Optional: TensorFlow Baseline Integration
+        self.tf_model = None
+        self.tf_scaler = None
+        if tf_model_path and os.path.exists(tf_model_path) and tf_scaler_path and os.path.exists(tf_scaler_path):
+            import tensorflow as tf
+            self.tf_model = tf.keras.models.load_model(tf_model_path)
+            self.tf_scaler = joblib.load(tf_scaler_path)
+            
         # In a real app, cost and MSRP would come from a DB. 
         # For this implementation, we'll simulate them.
         self.margin_floor = 1.05
         self.msrp_ceiling = 1.50
 
     def predict_base_price(self, features_df):
-        """Returns the ML recommended price from XGBoost."""
-        return self.model.predict(features_df)[0]
+        """Returns the ML recommended price from XGBoost (blended with TF baseline if loaded)."""
+        xgb_price = self.model.predict(features_df)[0]
+        
+        if self.tf_model is not None and self.tf_scaler is not None:
+            scaled_features = self.tf_scaler.transform(features_df.values)
+            tf_price = self.tf_model.predict(scaled_features, verbose=0)[0][0]
+            # Blend 70% XGBoost with 30% TensorFlow Baseline
+            return (0.7 * xgb_price) + (0.3 * tf_price)
+            
+        return xgb_price
 
     def apply_guardrails(self, price, cost, msrp):
         """Ensures price stays within [cost * 1.05, msrp * 1.50]."""

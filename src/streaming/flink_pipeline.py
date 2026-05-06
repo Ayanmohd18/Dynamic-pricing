@@ -130,14 +130,22 @@ def run_flink_pipeline(is_local: bool):
         ds = env.add_source(consumer)
 
     # 3. Aggregation Pipeline
-    agg_stream = ds \
+    parsed_stream = ds \
         .map(lambda x: (json.loads(x)['sku_id'], x), output_type=Types.TUPLE([Types.STRING(), Types.STRING()])) \
-        .key_by(lambda x: x[0]) \
+        .key_by(lambda x: x[0])
+        
+    agg_stream = parsed_stream \
         .window(SlidingProcessingTimeWindows.of(Time.minutes(5), Time.minutes(1))) \
         .process(AggregateWindowFunction(), output_type=Types.STRING())
 
-    # 4. Sink: Log results (Price triggers happen inside the WindowFunction in this implementation)
+    # 3b. Flash Sale Detection Pipeline (CEP logic)
+    flash_sale_stream = parsed_stream \
+        .window(SlidingProcessingTimeWindows.of(Time.minutes(5), Time.minutes(1))) \
+        .process(FlashSaleDetector(), output_type=Types.STRING())
+
+    # 4. Sink: Log results
     agg_stream.print()
+    flash_sale_stream.print()
 
     # 5. Execute
     print("Starting Flink Pricing Pipeline...")
