@@ -1,0 +1,36 @@
+{
+    "training_date": "2026-05-05T20:00:21.536713",
+    "best_params": {
+        "n_estimators": 988,
+        "learning_rate": 0.05272194546384147,
+        "max_depth": 7,
+        "subsample": 0.9469176090702527,
+        "colsample_bytree": 0.9455742447263451
+    },
+    "metrics": {
+        "mae": 4.174395642131614,
+        "rmse": 57.63038220736647,
+        "r2": 0.9331852982761295
+    },
+    "data_hash": "43a9c4025e3a2e334e76146e81f625dc",
+    "feature_list": [
+        "price",
+        "freight_value",
+        "hour_sin",
+        "hour_cos",
+        "day_sin",
+        "day_cos",
+        "is_weekend",
+        "is_month_end",
+        "is_holiday",
+        "days_since_last_order",
+        "demand_score_7d",
+        "demand_score_30d",
+        "demand_velocity",
+        "inventory_ratio",
+        "price_percentile_in_category",
+        "competitor_delta",
+        "review_elasticity"
+    ],
+    "model_format": "xgboost_json"
+}
