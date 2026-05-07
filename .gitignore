@@ -34,3 +34,8 @@ mlflow.db
 .DS_Store
 __MACOSX/
 .pytest_cache/
+
+# Credentials and Binaries
+*.pem
+*.exe
+scratch/
