@@ -14,12 +14,15 @@ __pycache__/
 *$py.class
 *.so
 
-# Data and Models
-# /data/
-# /dataset olist/
-# models/*.pkl
-# models/*.json
-# models/*.h5
+# Data and Models (large binary files)
+data/processed/
+data/features/
+models/saved/
+*.parquet
+*.pkl
+*.h5
+online+retail+ii/
+catboost_info/
 
 # Jupyter
 .ipynb_checkpoints
