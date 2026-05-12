@@ -1,0 +1,16 @@
+dataset olist/
+data/
+dynamic_pricing/data/
+notebooks/
+tests/
+online+retail+ii/
+dashboard/
+*.csv
+*.parquet
+*.xlsx
+*.ipynb
+*.exe
+*.dll
+.pytest_cache/
+catboost_info/
+scratch/
